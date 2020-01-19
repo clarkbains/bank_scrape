@@ -53,8 +53,8 @@ class UserAuthentication:
         return Status.authorized('You have logged in',newSession)
 
     def validateSession (self,token):
-        if len(token) < 5:
-            return Status.error("Your token must be at least 5 characters")
+        if len(token) < 1:
+            return Status.error("Your `x-auth` header must least 1 character")
         now = time.time()
         self.cursor.execute("SELECT expires_on FROM users WHERE `session_token`= %s and `expires_on`>%s and `enabled`=1",[token,now])
         res = self.cursor.fetchall()
@@ -103,4 +103,12 @@ class User:
     def __init__(self,request):
         self.req = request
     def getToken(self):
-        return self.req.headers.get('x-auth')
+        print ('x-auth' in self.req.headers,self.req.method,self.req.get_json(silent=True))
+        if self.req.headers.get('x-auth')!=None:
+
+            return self.req.headers.get('x-auth')
+        elif self.req.method=='POST':
+            if self.req.get_json(silent=True) and 'x-auth' in self.req.get_json(silent=True):
+                print (self.req.json['x-auth'])
+                return self.req.json['x-auth']
+        return ""
