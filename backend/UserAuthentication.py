@@ -14,14 +14,14 @@ class UserAuthentication:
         self.sessionLength = 3600
     def addUser(self,user):
         try:
-            password = self._hash(user['password'],user['user_name'])
+            password = self._hash(user['password'],user['username'])
             userData = [
-                user['user_name'],
+                user['username'],
                 password,
                 user['email']
             ]
             loginCheck = [
-                user['user_name'],
+                user['username'],
                 user['email']
             ]
         except KeyError as e:
@@ -34,11 +34,11 @@ class UserAuthentication:
         self.db.commit()
         
     def login(self,user):
-        if 'user_name' not in user or 'password' not in user:
+        if 'username' not in user or 'password' not in user:
             return Status.error('Must Provide Both Username and Password')
         login = [
-            user['user_name'],
-            self._hash(user['password'],user['user_name'])
+            user['username'],
+            self._hash(user['password'],user['username'])
         ]
         self.cursor.execute("SELECT id,enabled FROM users WHERE `user_name`= %s and `password_hash`= %s",login)
         res = self.cursor.fetchall()
@@ -93,8 +93,8 @@ class UserAuthentication:
         letters = string.ascii_lowercase+"0123456789"
         return ''.join(random.choice(letters) for i in range(50))
 
-    def _hash(self,password,user_name):
-        hashstr = str(password)+str(user_name)
+    def _hash(self,password,username):
+        hashstr = str(password)+str(username)
         hashstr = hashstr.encode('utf-8')
         return hashlib.sha224(hashstr).hexdigest()
 
@@ -103,12 +103,9 @@ class User:
     def __init__(self,request):
         self.req = request
     def getToken(self):
-        print ('x-auth' in self.req.headers,self.req.method,self.req.get_json(silent=True))
         if self.req.headers.get('x-auth')!=None:
-
             return self.req.headers.get('x-auth')
         elif self.req.method=='POST':
             if self.req.get_json(silent=True) and 'x-auth' in self.req.get_json(silent=True):
-                print (self.req.json['x-auth'])
                 return self.req.json['x-auth']
         return ""
